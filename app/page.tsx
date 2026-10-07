@@ -1,7 +1,8 @@
 'use client';
-import {useMemo,useState} from "react";
+import {useEffect,useMemo,useState} from "react";
 function getId(url:string){try{const u=new URL(url);if(u.hostname.includes("youtu.be"))return u.pathname.slice(1);if(u.searchParams.get("v"))return u.searchParams.get("v");const m=u.pathname.match(/\/shorts\/([^/]+)/);return m?.[1]||null}catch{return null}}
 export default function Home(){const [url,setUrl]=useState(""),[comments,setComments]=useState<string[]>(Array(100).fill("")),[status,setStatus]=useState<string[]>(Array(100).fill("Not posted")),[logged,setLogged]=useState(false),id=useMemo(()=>getId(url),[url]);
+useEffect(()=>{fetch("/api/auth/status").then(r=>r.json()).then(d=>setLogged(!!d.loggedIn)).catch(()=>{});},[]);
 const update=(i:number,v:string)=>{setComments(c=>{const n=[...c];n[i]=v;return n});setStatus(s=>{const n=[...s];n[i]="Not posted";return n})};
 const postOne=async(i:number)=>{if(!id||!comments[i].trim())return;setStatus(s=>{const n=[...s];n[i]="Posting…";return n});const r=await fetch("/api/comments",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({videoId:id,comment:comments[i]})});const d=await r.json();setStatus(s=>{const n=[...s];n[i]=r.ok?"Posted on YouTube":d.error||"Post failed";return n});if(r.status===401)setLogged(false)};
 const login=()=>{window.location.href="/api/auth/login"}; 
