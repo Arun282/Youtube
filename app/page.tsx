@@ -1,64 +1,13 @@
 'use client';
-
 import {useMemo,useState} from "react";
-
-function getId(url:string){
-  try{
-    const u=new URL(url);
-    if(u.hostname.includes("youtu.be")) return u.pathname.slice(1);
-    if(u.searchParams.get("v")) return u.searchParams.get("v");
-    const m=u.pathname.match(/\/shorts\/([^/]+)/);
-    return m?.[1]||null;
-  }catch{return null}
-}
-
-export default function Home(){
-  const [url,setUrl]=useState("");
-  const [comments,setComments]=useState<string[]>(Array(100).fill(""));
-  const [posted,setPosted]=useState<boolean[]>(Array(100).fill(false));
-  const id=useMemo(()=>getId(url),[url]);
-
-  const update=(i:number,value:string)=>{
-    setComments(c=>{const n=[...c];n[i]=value;return n});
-    setPosted(p=>{const n=[...p];n[i]=false;return n});
-  };
-
-  const postOne=(i:number)=>{
-    if(!id || !comments[i].trim()) return;
-    setPosted(p=>{const n=[...p];n[i]=true;return n});
-  };
-
-  return <main>
-    <div className="card">
-      <div className="badge">YOUTUBE COMMENT TOOL</div>
-      <h1>100 Comment Boxes</h1>
-      <p className="sub">Paste a YouTube video URL, then write separate comments below. Each comment has its own Post button.</p>
-
-      <label>Video URL</label>
-      <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
-
-      {id ? <div className="video"><iframe src={"https://www.youtube.com/embed/"+id} title="YouTube video" allowFullScreen/></div>
-           : <div className="hint">Enter a valid YouTube video URL to see the preview.</div>}
-
-      <div className="notice">For safety, comments must be posted individually. This page does not provide one-click bulk posting.</div>
-
-      <div className="comment-list">
-        {comments.map((comment,i)=><div className="comment-box" key={i}>
-          <div className="comment-head"><strong>Comment {i+1}</strong><span>{comment.length}/5000</span></div>
-          <textarea maxLength={5000} value={comment} onChange={e=>update(i,e.target.value)} placeholder={"Write comment "+(i+1)+"..."} />
-          <div className="row">
-            <span>{posted[i] ? "Posted/ready" : "Not posted"}</span>
-            <button disabled={!id||!comment.trim()||posted[i]} onClick={()=>postOne(i)}>
-              {posted[i] ? "Posted" : "Post this comment"}
-            </button>
-          </div>
-          {posted[i]&&<div className="success">This comment is prepared. Actual YouTube posting requires the site's authorized YouTube API connection.</div>}
-        </div>)}
-      </div>
-
-      <a className="yt" href={id?("https://www.youtube.com/watch?v="+id):"https://www.youtube.com"} target="_blank">
-        Open on YouTube ↗
-      </a>
-    </div>
-  </main>
-}
+function getId(url:string){try{const u=new URL(url);if(u.hostname.includes("youtu.be"))return u.pathname.slice(1);if(u.searchParams.get("v"))return u.searchParams.get("v");const m=u.pathname.match(/\/shorts\/([^/]+)/);return m?.[1]||null}catch{return null}}
+export default function Home(){const [url,setUrl]=useState(""),[comments,setComments]=useState<string[]>(Array(100).fill("")),[status,setStatus]=useState<string[]>(Array(100).fill("Not posted")),[logged,setLogged]=useState(false),id=useMemo(()=>getId(url),[url]);
+const update=(i:number,v:string)=>{setComments(c=>{const n=[...c];n[i]=v;return n});setStatus(s=>{const n=[...s];n[i]="Not posted";return n})};
+const postOne=async(i:number)=>{if(!id||!comments[i].trim())return;setStatus(s=>{const n=[...s];n[i]="Posting…";return n});const r=await fetch("/api/comments",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({videoId:id,comment:comments[i]})});const d=await r.json();setStatus(s=>{const n=[...s];n[i]=r.ok?"Posted on YouTube":d.error||"Post failed";return n});if(r.status===401)setLogged(false)};
+const login=()=>{window.location.href="/api/auth/login"}; 
+return <main><div className="card"><div className="badge">YOUTUBE COMMENT TOOL</div><h1>100 Comment Boxes</h1><p className="sub">Sign in with the Google/YouTube account you want to use, then post comments individually.</p>
+<div className="auth"><span>{logged?"✓ YouTube account connected":"YouTube account not connected"}</span><button onClick={login}>{logged?"Reconnect Google":"Sign in with Google"}</button></div>
+<label>Video URL</label><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..."/>{id?<div className="video"><iframe src={"https://www.youtube.com/embed/"+id} title="YouTube video" allowFullScreen/></div>:<div className="hint">Enter a valid YouTube video URL to see the preview.</div>}
+<div className="notice">Each Post button sends only its own comment through the authorized YouTube account. There is no one-click bulk posting.</div>
+<div className="comment-list">{comments.map((comment,i)=><div className="comment-box" key={i}><div className="comment-head"><strong>Comment {i+1}</strong><span>{comment.length}/5000</span></div><textarea maxLength={5000} value={comment} onChange={e=>update(i,e.target.value)} placeholder={"Write comment "+(i+1)+"..."}/><div className="row"><span>{status[i]}</span><button disabled={!id||!comment.trim()||status[i]==="Posting…"||status[i]==="Posted on YouTube"} onClick={()=>postOne(i)}>{status[i]==="Posted on YouTube"?"Posted":"Post this comment"}</button></div></div>)}</div>
+<a className="yt" href={id?("https://www.youtube.com/watch?v="+id):"https://www.youtube.com"} target="_blank">Open on YouTube ↗</a></div></main>}
