@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {oauthClient,seal} from "../../../../lib/auth";
+export async function GET(){const client=oauthClient(),state=seal({v:1});const url=client.generateAuthUrl({access_type:"offline",prompt:"consent",scope:["https://www.googleapis.com/auth/youtube.force-ssl"],state});const r=NextResponse.redirect(url);r.cookies.set("oauth_state",state,{httpOnly:true,secure:true,sameSite:"lax",maxAge:600,path:"/"});return r}
