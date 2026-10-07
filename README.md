@@ -1,0 +1,2 @@
+# YouTube Commenter
+Safe single-comment YouTube helper. Paste a video URL, preview it, write one comment, and open the video on YouTube to post it. Bulk comment automation is intentionally not included.
