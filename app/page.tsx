@@ -8,8 +8,6 @@ useEffect(()=>{fetch("/api/auth/status").then(r=>r.json()).then(d=>setLogged(!!d
 const update=(i:number,v:string)=>{setSelected(i);setComments(c=>{const n=[...c];n[i]=v;return n});setStatus(s=>{const n=[...s];n[i]="Not posted";return n})};
 const postSelected=async()=>{
 if(!id||!logged||posting||!comments[selected].trim())return;
-const ok=window.confirm("OK दबाने पर Comment "+(selected+1)+" आपके connected YouTube account से पोस्ट होगा. Continue?");
-if(!ok)return;
 setPosting(true);setStatus(s=>{const n=[...s];n[selected]="Posting…";return n});
 try{const r=await fetch("/api/comments",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({videoId:id,comment:comments[selected]})});const d=await r.json();setStatus(s=>{const n=[...s];n[selected]=r.ok?"Posted on YouTube":d.error||"Post failed";return n});if(r.status===401)setLogged(false)}catch{setStatus(s=>{const n=[...s];n[selected]="Post failed";return n})}finally{setPosting(false)}
 };
