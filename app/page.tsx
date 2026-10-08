@@ -1,9 +1,9 @@
 'use client';
-import {useMemo,useState} from "react";
+import {useEffect,useMemo,useState} from "react";
 function getId(url:string){try{const u=new URL(url);if(u.hostname.includes("youtu.be"))return u.pathname.slice(1);if(u.searchParams.get("v"))return u.searchParams.get("v");const m=u.pathname.match(/\/shorts\/([^/]+)/);return m?.[1]||null}catch{return null}}
 export default function Home(){
 const [url,setUrl]=useState(""),[comments,setComments]=useState<string[]>(Array(100).fill("❤️")),[status,setStatus]=useState<string[]>(Array(100).fill("Not posted")),[selected,setSelected]=useState(0),[logged,setLogged]=useState(false),[posting,setPosting]=useState(false),[success,setSuccess]=useState(false),id=useMemo(()=>getId(url),[url]);
-useState(()=>{fetch("/api/auth/status").then(r=>r.json()).then(d=>setLogged(!!d.loggedIn)).catch(()=>{});});
+useEffect(()=>{fetch("/api/auth/status").then(r=>r.json()).then(d=>setLogged(!!d.loggedIn)).catch(()=>{});},[]);
 const update=(i:number,v:string)=>{setSelected(i);setComments(c=>{const n=[...c];n[i]=v;return n})};
 const postSelected=async()=>{
 if(!id||!logged||posting||!comments[selected].trim())return;
