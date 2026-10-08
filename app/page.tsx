@@ -2,11 +2,12 @@
 import {useEffect,useMemo,useState} from "react";
 function getId(url:string){try{const u=new URL(url);if(u.hostname.includes("youtu.be"))return u.pathname.slice(1);if(u.searchParams.get("v"))return u.searchParams.get("v");const m=u.pathname.match(/\/shorts\/([^/]+)/);return m?.[1]||null}catch{return null}}
 const KEY="yt-comment-tool-status-v1";
+function loadStatus(){if(typeof window==="undefined")return Array(100).fill("Not posted");try{const saved=localStorage.getItem(KEY);const parsed=saved?JSON.parse(saved):null;if(Array.isArray(parsed)&&parsed.length===100)return parsed}catch{}return Array(100).fill("Not posted")}
 export default function Home(){
-const [url,setUrl]=useState(""),[comments,setComments]=useState<string[]>(Array(100).fill("❤️")),[status,setStatus]=useState<string[]>(Array(100).fill("Not posted")),[selected,setSelected]=useState(0),[logged,setLogged]=useState(false),[posting,setPosting]=useState(false),[hydrated,setHydrated]=useState(false),id=useMemo(()=>getId(url),[url]);
+const [url,setUrl]=useState(""),[comments,setComments]=useState<string[]>(Array(100).fill("❤️")),[status,setStatus]=useState<string[]>(loadStatus),[selected,setSelected]=useState(0),[logged,setLogged]=useState(false),[posting,setPosting]=useState(false),id=useMemo(()=>getId(url),[url]);
 const postedCount=status.filter(s=>s==="Posted on YouTube").length;
-useEffect(()=>{try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed)&&parsed.length===100)setStatus(parsed)}}catch{}setHydrated(true);fetch("/api/auth/status").then(r=>r.json()).then(d=>setLogged(!!d.loggedIn)).catch(()=>{});},[]);
-useEffect(()=>{if(hydrated)try{localStorage.setItem(KEY,JSON.stringify(status))}catch{}},[status,hydrated]);
+useEffect(()=>{fetch("/api/auth/status").then(r=>r.json()).then(d=>setLogged(!!d.loggedIn)).catch(()=>{});},[]);
+useEffect(()=>{try{localStorage.setItem(KEY,JSON.stringify(status))}catch{}},[status]);
 const update=(i:number,v:string)=>{setSelected(i);setComments(c=>{const n=[...c];n[i]=v;return n})};
 const postSelected=async()=>{
 if(!id||!logged||posting||!comments[selected].trim())return;
